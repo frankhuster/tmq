@@ -120,20 +120,12 @@ public class App {
                 // Create a MessageConsumer from the Session to the Topic or Queue
                 MessageConsumer consumer = session.createConsumer(destination);
 
-                while (true) {
+                for (int i = 0 ; i < this.messageCount; i++) {
+
                     // Wait for a message
                     Message message = consumer.receive();
 
-                    if (message instanceof TextMessage) {
-                        TextMessage textMessage = (TextMessage) message;
-                        String text = textMessage.getText();
-                        System.out.println("Received: " + text);
-                        if ("end".equalsIgnoreCase(text)) {
-                            break;
-                        }
-                    } else {
-                        System.out.println("Received: " + message);
-                    }
+                    System.out.println("Thread: " + Thread.currentThread().getName() + " Received: [" + i + "] " + message);
                 }
 
                 consumer.close();

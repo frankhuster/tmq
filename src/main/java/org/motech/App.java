@@ -27,11 +27,12 @@ public class App {
     private static final long MILLI_PER_SECOND = 1000;
 
     private static void usage() {
-        System.out.println("App numThread messageCount messageSize [timeoutMinutes=1]");
+        System.out.println("App numThread messageCount messageSize [url=tcp://localhost:61616] [timeoutMinutes=1]");
     }
 
     public static void main(String[] args) throws Exception {
         int numThreads, messageCount, messageSize, timeoutMinutes = 1;
+        String url = "tcp://localhost:61616";
         ExecutorService es = Executors.newCachedThreadPool();
 
         if (3 > args.length) {
@@ -43,8 +44,11 @@ public class App {
             numThreads = new Integer(args[0]).intValue();
             messageCount = new Integer(args[1]).intValue();
             messageSize = new Integer(args[2]).intValue();
-            if (args.length == 4) {
-                timeoutMinutes = new Integer(args[3]).intValue();
+            if (args.length > 3) {
+                url = args[3];
+                if (args.length > 4) {
+                    timeoutMinutes = new Integer(args[4]).intValue();
+                }
             }
         } catch (NumberFormatException e) {
             usage();
@@ -60,8 +64,8 @@ public class App {
         long start = System.currentTimeMillis();
 
         for (int i = 0; i < numThreads ; i++) {
-            es.execute(new HelloWorldProducer(messageCount, messageSize));
-            es.execute(new HelloWorldConsumer(messageCount));
+            es.execute(new HelloWorldProducer(url, messageCount, messageSize));
+            es.execute(new HelloWorldConsumer(url, messageCount));
         }
 
         es.shutdown();
@@ -86,10 +90,12 @@ public class App {
     }
 
     public static class HelloWorldProducer implements Runnable {
+        String url;
         int messageCount;
         int messageSize;
 
-        public HelloWorldProducer(int messageCount, int messageSize) {
+        public HelloWorldProducer(String url, int messageCount, int messageSize) {
+            this.url = url;
             this.messageCount = messageCount;
             this.messageSize = messageSize;
         }
@@ -97,7 +103,7 @@ public class App {
         public void run() {
             try {
                 // Create a ConnectionFactory
-                ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61616");
+                ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
 
                 // Create a Connection
                 Connection connection = connectionFactory.createConnection();
@@ -135,9 +141,11 @@ public class App {
     }
 
     public static class HelloWorldConsumer implements Runnable, ExceptionListener {
+        String url;
         int messageCount;
 
-        public HelloWorldConsumer(int messageCount) {
+        public HelloWorldConsumer(String url, int messageCount) {
+            this.url = url;
             this.messageCount = messageCount;
         }
 
@@ -145,7 +153,7 @@ public class App {
             try {
 
                 // Create a ConnectionFactory
-                ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61616");
+                ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
 
                 // Create a Connection
                 Connection connection = connectionFactory.createConnection();

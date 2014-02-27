@@ -48,6 +48,11 @@ public class App {
             return;
         }
 
+        System.out.format("            # of threads: %,8d%n", numThreads);
+        System.out.format("    # of messages/thread: %,8d%n", messageCount);
+        System.out.format("     total # of messages: %,8d%n", (messageCount * numThreads));
+        System.out.format("            message size: %,8d%n", messageSize);
+
         long start = System.currentTimeMillis();
 
         for (int i = 0; i < numThreads ; i++) {
@@ -61,13 +66,8 @@ public class App {
             long stop = System.currentTimeMillis();
             long millis = stop - start;
 
-            System.out.println("     # of threads: " + numThreads);
-            System.out.println("    # of messages: " + messageCount);
-            System.out.println("     message size: " + messageSize);
-            System.out.format( "            start: %,d%n", start);
-            System.out.format( "             stop: %,d%n", stop);
-            System.out.format( "     milliseconds: %,d%n", millis);
-            System.out.format("# messages/second: %,d%n", messageCount * MILLI_PER_SECOND / millis);
+            System.out.format( "            milliseconds: %,8d%n", millis);
+            System.out.format("       # messages/second: %,8d%n", messageCount * numThreads * MILLI_PER_SECOND / millis);
         }
         else {
             System.out.println("Execution took longer than 1 hour, aborting.");

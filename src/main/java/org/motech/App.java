@@ -27,14 +27,14 @@ public class App {
     private static final long MILLI_PER_SECOND = 1000;
 
     private static void usage() {
-        System.out.println("App numThread messageCount messageSize");
+        System.out.println("App numThread messageCount messageSize [timeoutMinutes=1]");
     }
 
     public static void main(String[] args) throws Exception {
-        int numThreads, messageCount, messageSize;
+        int numThreads, messageCount, messageSize, timeoutMinutes = 1;
         ExecutorService es = Executors.newCachedThreadPool();
 
-        if (3 != args.length) {
+        if (3 > args.length) {
             usage();
             return;
         }
@@ -43,6 +43,9 @@ public class App {
             numThreads = new Integer(args[0]).intValue();
             messageCount = new Integer(args[1]).intValue();
             messageSize = new Integer(args[2]).intValue();
+            if (args.length == 4) {
+                timeoutMinutes = new Integer(args[3]).intValue();
+            }
         } catch (NumberFormatException e) {
             usage();
             return;
@@ -52,6 +55,7 @@ public class App {
         System.out.format("    # of messages/thread: %,8d%n", messageCount);
         System.out.format("     total # of messages: %,8d%n", (messageCount * numThreads));
         System.out.format("            message size: %,8d%n", messageSize);
+        System.out.format("           timeout (min): %,8d%n", timeoutMinutes);
 
         long start = System.currentTimeMillis();
 
@@ -62,15 +66,17 @@ public class App {
 
         es.shutdown();
 
-        if (es.awaitTermination(1, TimeUnit.HOURS)) {
+        if (es.awaitTermination(timeoutMinutes, TimeUnit.MINUTES)) {
             long stop = System.currentTimeMillis();
             long millis = stop - start;
 
             System.out.format( "            milliseconds: %,8d%n", millis);
-            System.out.format("       # messages/second: %,8d%n", messageCount * numThreads * MILLI_PER_SECOND / millis);
+            System.out.format("       # messages/second: %,8d%n",
+                    messageCount * numThreads * MILLI_PER_SECOND / millis);
         }
         else {
-            System.out.println("Execution took longer than 1 hour, aborting.");
+            System.out.format("Execution took longer than %d minute%s, aborting.%n", timeoutMinutes,
+                    timeoutMinutes == 1 ? "" : "s");
             System.exit(1);
         }
     }

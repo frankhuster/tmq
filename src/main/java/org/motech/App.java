@@ -15,37 +15,68 @@ import javax.jms.TextMessage;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Hello world!
  */
 public class App {
+
+    private static final long MILLI_PER_SECOND = 1000;
 
     private static void usage() {
         System.out.println("App numThread messageCount messageSize");
     }
 
     public static void main(String[] args) throws Exception {
-        long start = System.currentTimeMillis();
-
-        int numThreads = new Integer(args[0]).intValue();
-        int messageCount = new Integer(args[1]).intValue();
-        int messageSize = new Integer(args[2]).intValue();
+        int numThreads, messageCount, messageSize;
+        ExecutorService es = Executors.newCachedThreadPool();
 
         if (3 != args.length) {
             usage();
-        } else {
-            for (int i = 0; i < numThreads ; i++) {
-                thread(new HelloWorldProducer(messageCount, messageSize), false);
-                thread(new HelloWorldConsumer(messageCount), false);
-            }
+            return;
         }
-        long millis = System.currentTimeMillis() - start;
+
+        try {
+            numThreads = new Integer(args[0]).intValue();
+            messageCount = new Integer(args[1]).intValue();
+            messageSize = new Integer(args[2]).intValue();
+        } catch (NumberFormatException e) {
+            usage();
+            return;
+        }
+
+        long start = System.currentTimeMillis();
+
+        for (int i = 0; i < numThreads ; i++) {
+            es.execute(new HelloWorldProducer(messageCount, messageSize));
+            es.execute(new HelloWorldConsumer(messageCount));
+        }
+
+        es.shutdown();
+
+        if (es.awaitTermination(1, TimeUnit.HOURS)) {
+            long stop = System.currentTimeMillis();
+            long millis = stop - start;
+
+            System.out.println("     # of threads: " + numThreads);
+            System.out.println("    # of messages: " + messageCount);
+            System.out.println("     message size: " + messageSize);
+            System.out.format( "            start: %,d%n", start);
+            System.out.format( "             stop: %,d%n", stop);
+            System.out.format( "     milliseconds: %,d%n", millis);
+            System.out.format("# messages/second: %,d%n", messageCount * MILLI_PER_SECOND / millis);
+        }
+        else {
+            System.out.println("Execution took longer than 1 hour, aborting.");
+            System.exit(1);
+        }
     }
 
-    public static void thread(Runnable runnable, boolean daemon) {
-        Thread brokerThread = new Thread(runnable);
-        brokerThread.setDaemon(daemon);
-        brokerThread.start();
+    public static void thread(ExecutorService es, Runnable runnable) {
+        es.execute(runnable);
     }
 
     public static class HelloWorldProducer implements Runnable {

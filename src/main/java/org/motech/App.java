@@ -19,26 +19,22 @@ import javax.jms.TextMessage;
 public class App {
 
     private static void usage() {
-        System.out.println("Usage is very complicated.");
+        System.out.println("App numThread messageCount messageSize");
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 1 && "listen".equalsIgnoreCase(args[0])) {
-                listen();
-        } else if (args.length == 1 && "speak".equalsIgnoreCase(args[0])) {
-            speak();
-        }
-        else {
+        int numThreads = new Integer(args[0]).intValue();
+        int messageCount = new Integer(args[1]).intValue();
+        int messageSize = new Integer(args[2]).intValue();
+
+        if (3 != args.length) {
             usage();
+        } else {
+            for (int i = 0; i < messageCount ; i++) {
+                thread(new HelloWorldProducer(messageCount, messageSize), false);
+                thread(new HelloWorldConsumer(messageCount), false);
+            }
         }
-    }
-
-    private static void listen() {
-        thread(new HelloWorldConsumer(), false);
-    }
-
-    private static void speak() {
-        thread(new HelloWorldProducer(), false);
     }
 
     public static void thread(Runnable runnable, boolean daemon) {
@@ -48,6 +44,14 @@ public class App {
     }
 
     public static class HelloWorldProducer implements Runnable {
+        int messageCount;
+        int messageSize;
+
+        public HelloWorldProducer(int messageCount, int messageSize) {
+            this.messageCount = messageCount;
+            this.messageSize = messageSize;
+        }
+
         public void run() {
             try {
                 // Create a ConnectionFactory
@@ -89,6 +93,12 @@ public class App {
     }
 
     public static class HelloWorldConsumer implements Runnable, ExceptionListener {
+        int messageCount;
+
+        public HelloWorldConsumer(int messageCount) {
+            this.messageCount = messageCount;
+        }
+
         public void run() {
             try {
 

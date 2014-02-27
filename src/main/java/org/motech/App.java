@@ -13,6 +13,8 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.apache.commons.lang3.RandomStringUtils;
+
 /**
  * Hello world!
  */
@@ -23,6 +25,8 @@ public class App {
     }
 
     public static void main(String[] args) throws Exception {
+        long start = System.currentTimeMillis();
+
         int numThreads = new Integer(args[0]).intValue();
         int messageCount = new Integer(args[1]).intValue();
         int messageSize = new Integer(args[2]).intValue();
@@ -30,11 +34,12 @@ public class App {
         if (3 != args.length) {
             usage();
         } else {
-            for (int i = 0; i < messageCount ; i++) {
+            for (int i = 0; i < numThreads ; i++) {
                 thread(new HelloWorldProducer(messageCount, messageSize), false);
                 thread(new HelloWorldConsumer(messageCount), false);
             }
         }
+        long millis = System.currentTimeMillis() - start;
     }
 
     public static void thread(Runnable runnable, boolean daemon) {
@@ -71,13 +76,13 @@ public class App {
                 MessageProducer producer = session.createProducer(destination);
                 producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
-                for (int i=0 ; i<1000 ; i++) {
+                for (int i=0 ; i<messageCount ; i++) {
                     // Create a messages
-                    String text = "Hello world! From: " + Thread.currentThread().getName() + " : " + this.hashCode();
+                    String text = RandomStringUtils.random(messageSize);
                     TextMessage message = session.createTextMessage(text);
 
                     // Tell the producer to send the message
-                    System.out.println("Sent message: "+ message.hashCode() + " : " + Thread.currentThread().getName());
+                    // System.out.println("Sending [" + text + "]");
                     producer.send(message);
                 }
 
@@ -125,7 +130,7 @@ public class App {
                     // Wait for a message
                     Message message = consumer.receive();
 
-                    System.out.println("Thread: " + Thread.currentThread().getName() + " Received: [" + i + "] " + message);
+                    //System.out.println("Thread: " + Thread.currentThread().getName() + " Received: [" + i + "] ");
                 }
 
                 consumer.close();
